@@ -3980,8 +3980,10 @@ public class WifiStateMachine extends StateMachine implements WifiNative.WifiRss
         }
 
         try {
-            mNwService.wifiFirmwareReload(mInterfaceName, "AP");
-            if (DBG) Log.d(TAG, "Firmware reloaded in AP mode");
+            if (!SystemProperties.getBoolean("ro.disableWifiApFirmwareReload", false)) {
+                mNwService.wifiFirmwareReload(mInterfaceName, "AP");
+                if (DBG) Log.d(TAG, "Firmware reloaded in AP mode");
+            }
         } catch (Exception e) {
             Log.e(TAG, "Failed to reload AP firmware " + e);
         }
@@ -4451,6 +4453,12 @@ public class WifiStateMachine extends StateMachine implements WifiNative.WifiRss
             logStateAndMessage(message, this);
             switch (message.what) {
                 case CMD_START_SUPPLICANT:
+                   /* Stop a running supplicant after a runtime restart
+                    * Avoids issues with drivers that do not handle interface down
+                    * on a running supplicant properly.
+                    */
+                    mWifiMonitor.killSupplicant(mP2pSupported);
+
                     if (mWifiNative.loadDriver()) {
                         try {
                             mNwService.wifiFirmwareReload(mInterfaceName, "STA");
@@ -4482,12 +4490,6 @@ public class WifiStateMachine extends StateMachine implements WifiNative.WifiRss
                         } catch (IllegalStateException ie) {
                             loge("Unable to change interface settings: " + ie);
                         }
-
-                       /* Stop a running supplicant after a runtime restart
-                        * Avoids issues with drivers that do not handle interface down
-                        * on a running supplicant properly.
-                        */
-                        mWifiMonitor.killSupplicant(mP2pSupported);
 
                         if (mWifiNative.startHal() == false) {
                             /* starting HAL is optional */
