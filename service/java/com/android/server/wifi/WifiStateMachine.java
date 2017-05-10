@@ -94,6 +94,7 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
+import android.os.SystemProperties;
 
 import com.android.internal.R;
 import com.android.internal.annotations.GuardedBy;
